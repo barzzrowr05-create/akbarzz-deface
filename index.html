@@ -1,247 +1,342 @@
-<!DOCTYPE html><html lang="id">
+<!DOCTYPE html>
+<html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Simulasi Deface (DEMO)</title>
-  <meta name="description" content="Halaman simulasi deface untuk demo/edukasi—tidak untuk penyalahgunaan." />
-  <style>
-    /* ====== Reset ringkas ====== */
-    *,*::before,*::after{box-sizing:border-box}html,body{height:100%}body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:#000;color:#e5e7eb}/* ====== Latar belakang cyber ====== */
-.bg {
-  position:fixed; inset:0; overflow:hidden; z-index:-2;
-  background: radial-gradient(1200px 600px at 10% 10%, #1f2937 0, #0b0f19 50%, #000 100%);
-}
-/* noise+scanline untuk efek CRT */
-.overlay { position:fixed; inset:0; z-index:-1; pointer-events:none; mix-blend-mode:soft-light; }
-.scanlines{ background: repeating-linear-gradient( to bottom, rgba(255,255,255,.04) 0, rgba(255,255,255,.04) 1px, transparent 2px ); filter:contrast(120%); opacity:.35 }
-.noise { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.06"/></svg>'); opacity:.5 }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cyber Virus — Simulasi</title>
+<style>
+  :root{
+    --purple:#9d00ff;
+    --white:#ffffff;
+    --bg:#020202;
+    --glow:#a100ff;
+    --accent:#e11d48;
+  }
 
-/* ====== Layout ====== */
-.container { min-height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:28px; padding:24px }
-.card { width: min(980px, 92vw); background: linear-gradient(180deg, rgba(17,24,39,.8), rgba(3,7,18,.8)); border:1px solid rgba(255,255,255,.06); border-radius:24px; padding:28px; box-shadow: 0 20px 60px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.05) }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background: radial-gradient(1200px 800px at 50% 10%, #0a0a0a 0%, #000 60%, #000 100%);
+    color:#ddd;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+    overflow:hidden;
+  }
 
-/* ====== Heading glitch ====== */
-.glitch {
-  position:relative; display:inline-block; font-weight:800; letter-spacing:1px; text-transform:uppercase;
-  font-size: clamp(28px, 6vw, 64px); line-height:1.1; color:#f43f5e; text-shadow: 0 0 12px rgba(244,63,94,.6);
-}
-.glitch::before, .glitch::after{
-  content: attr(data-text); position:absolute; left:0; top:0; width:100%; overflow:hidden; clip-path: inset(0 0 0 0);
-}
-.glitch::before{ color:#22d3ee; transform: translate(2px,-2px); animation: flicker 2.2s infinite linear alternate; }
-.glitch::after{ color:#a78bfa; transform: translate(-2px,2px); animation: flicker 1.8s infinite linear alternate-reverse; }
-@keyframes flicker{ 0%{clip-path: inset(0 0 85% 0)} 10%{clip-path: inset(0 0 10% 0)} 20%{clip-path: inset(0 0 60% 0)} 30%{clip-path: inset(0 0 30% 0)} 40%{clip-path: inset(0 0 50% 0)} 50%{clip-path: inset(0 0 20% 0)} 60%{clip-path: inset(0 0 70% 0)} 70%{clip-path: inset(0 0 40% 0)} 80%{clip-path: inset(0 0 90% 0)} 90%{clip-path: inset(0 0 15% 0)} 100%{clip-path: inset(0 0 0 0)} }
+  #bg, #scan {
+    position:fixed; inset:0; width:100%; height:100%; display:block; z-index:-2;
+  }
+  #scan{
+    z-index:-1;
+    mix-blend-mode:screen;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.06) 0px,
+      rgba(255,255,255,0.06) 1px,
+      transparent 3px,
+      transparent 6px
+    );
+    animation: scanMove 7s linear infinite;
+    pointer-events:none;
+  }
+  @keyframes scanMove {
+    0%{transform:translateY(-10%)}
+    100%{transform:translateY(10%)}
+  }
 
-/* subjudul ketik */
-.typing { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: clamp(12px, 2.6vw, 18px); color:#e2e8f0; opacity:.9; min-height:1.6em }
+  .wrap{
+    position:relative;
+    width:min(1000px, 94vw);
+    margin:0 auto;
+    height:100%;
+    display:grid;
+    grid-template-rows:auto 1fr auto;
+    place-items:center;
+    padding:16px 0 24px;
+    gap:10px;
+  }
 
-/* pita info / tanda tangan */
-.meta { display:flex; flex-wrap:wrap; gap:10px; align-items:center; color:#9ca3af; font-size:14px }
-.badge { border:1px solid rgba(255,255,255,.12); padding:6px 10px; border-radius:999px; backdrop-filter: blur(4px); background:rgba(17,24,39,.55) }
+  /* TEKS BERGERAK PELANGI */
+  .marquee{
+    width:100%;
+    overflow:hidden;
+    white-space:nowrap;
+    border-bottom:1px solid #222;
+    border-top:1px solid #222;
+    filter: drop-shadow(0 0 6px rgba(157,0,255,.45));
+  }
+  .marquee span{
+    display:inline-block;
+    padding-block:12px;
+    font-weight:900;
+    letter-spacing:1.5px;
+    font-size:clamp(18px, 3.5vw, 34px);
+    background: linear-gradient(90deg,
+      violet, indigo, purple, magenta, violet
+    );
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    animation: slide 16s linear infinite, rainbowGlow 3s ease-in-out infinite;
+  }
+  @keyframes slide {
+    from{ transform: translateX(0) }
+    to  { transform: translateX(-50%) }
+  }
+  @keyframes rainbowGlow {
+    0%,100% { text-shadow: 0 0 6px violet, 0 0 12px purple; }
+    50%     { text-shadow: 0 0 8px magenta, 0 0 16px violet; }
+  }
 
-/* frame foto */
-.photo-wrap{ display:grid; grid-template-columns: 1fr 1fr; gap:22px; margin-top:18px }
-@media (max-width:780px){ .photo-wrap{ grid-template-columns:1fr } }
-.photo-card{ background: rgba(2,6,23,.6); border:1px solid rgba(255,255,255,.08); border-radius:18px; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,.45) }
-.photo-header{ padding:14px 16px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.06) }
-.photo-title{ font-weight:600; font-size:14px; color:#cbd5e1 }
-.controls{ display:flex; gap:8px; flex-wrap:wrap }
-.btn{ appearance:none; border:1px solid rgba(255,255,255,.16); background:linear-gradient(180deg, rgba(17,24,39,.85), rgba(2,6,23,.85)); color:#e5e7eb; border-radius:12px; padding:8px 12px; font-weight:600; cursor:pointer; transition:.2s transform, .2s opacity }
-.btn:hover{ transform: translateY(-1px) }
-.btn:active{ transform: translateY(0) scale(.98) }
+  .panel{
+    width:min(760px, 92vw);
+    background: rgba(0,0,0,.55);
+    border:1px solid #1a1a1a;
+    border-radius:20px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 0 35px rgba(157,0,255,.12), inset 0 0 18px rgba(255,255,255,.02);
+    padding:24px 18px 22px;
+  }
 
-.photo-body{ position:relative; aspect-ratio: 16/9; display:grid; place-items:center; }
-.photo-body img{ width:100%; height:100%; object-fit:cover; filter: contrast(105%) saturate(105%); }
-.photo-body .placeholder{ color:#94a3b8; font-size:14px; opacity:.8; text-align:center; padding:20px }
-.watermark{ position:absolute; inset:auto 10px 10px auto; background:rgba(0,0,0,.55); padding:6px 10px; border-radius:10px; font-size:12px; border:1px solid rgba(255,255,255,.12); color:#e5e7eb }
+  .photo-wrap{
+    position:relative;
+    width:min(360px, 70vw);
+    aspect-ratio:1/1;
+    margin-inline:auto;
+    border-radius:50%;
+    display:grid; place-items:center;
+    background:
+      radial-gradient(closest-side, rgba(157,0,255,.18), transparent 65%),
+      radial-gradient(closest-side, rgba(255,0,255,.14), transparent 60%);
+    box-shadow:
+      0 0 40px rgba(157,0,255,.25),
+      0 0 80px rgba(255,0,255,.15);
+  }
+  .ring{
+    position:absolute; inset:6px;
+    border-radius:50%;
+    padding:10px;
+    background: conic-gradient(from 0deg, var(--purple), var(--white), var(--purple));
+    filter: drop-shadow(0 0 25px rgba(157,0,255,.35));
+    animation: spin 12s linear infinite;
+  }
+  .ring::before{
+    content:"";
+    position:absolute; inset:6px; border-radius:50%;
+    background:#000;
+  }
+  @keyframes spin { to{ transform: rotate(360deg) } }
 
-/* footer */
-.disclaimer{ margin-top:18px; font-size:12px; color:#94a3b8 }
-.disclaimer strong{ color:#e5e7eb }
+  .photo{
+    position:relative;
+    z-index:2;
+    width:92%;
+    aspect-ratio:1/1;
+    border-radius:50%;
+    object-fit:cover;
+    box-shadow: 0 0 16px rgba(255,255,255,.08);
+    outline:3px solid rgba(255,255,255,.06);
+  }
 
-/* matrix rain canvas */
-canvas#matrix{ position:fixed; inset:0; z-index:-1; opacity:.25; }
+  .uploader{
+    margin:18px auto 0;
+    width:min(520px, 92%);
+    border:1.5px dashed #383838;
+    border-radius:14px;
+    padding:12px;
+    text-align:center;
+    background:rgba(10,10,10,.6);
+    transition:.2s ease;
+  }
+  .uploader.drag{ border-color:var(--purple); box-shadow:0 0 18px rgba(157,0,255,.25) inset }
+  .uploader p{ margin:6px 0 10px; font-size:13px; color:#9aa; }
+  .btn{
+    appearance:none; border:1px solid #303030; border-radius:12px;
+    background:linear-gradient(180deg,#101010,#0a0a0a);
+    color:#eee; font-weight:700; padding:10px 14px; cursor:pointer;
+    transition:.15s; font-size:14px;
+  }
+  .btn:hover{ transform:translateY(-1px); box-shadow:0 8px 22px rgba(157,0,255,.25) }
+  .btn:active{ transform:translateY(0) }
 
-  </style>
+  h1{
+    margin:18px 0 6px;
+    font-size:clamp(22px, 4vw, 36px);
+    font-weight:900;
+    letter-spacing:.12em;
+    color:#eee;
+    text-shadow: 0 0 12px rgba(157,0,255,.35);
+  }
+  .sub{
+    margin:0 0 16px;
+    color:#bdbdbd;
+    font-weight:700;
+  }
+
+  .term{
+    width:min(760px, 92vw);
+    background:#060606;
+    border:1px solid #181818;
+    border-radius:16px;
+    margin:10px auto 0;
+    overflow:hidden;
+    box-shadow: 0 0 24px rgba(157,0,255,.18);
+  }
+  .term-bar{
+    display:flex; gap:8px; align-items:center;
+    padding:8px 12px; background:#0b0b0b; border-bottom:1px solid #151515
+  }
+  .dot{width:10px; height:10px; border-radius:50%}
+  .r{background:#ff5f56}.y{background:#ffbd2e}.g{background:#27c93f}
+  .term-body{
+    padding:14px;
+    font-size:13px; line-height:1.5;
+    color:#c8c8c8; min-height:120px;
+  }
+  .k{color:#d98bff} .v{color:#d0d0d0}
+  .cursor{display:inline-block; width:8px; height:1.1em; background:#eee; margin-left:4px; animation:blink 1s step-end infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  footer{font-size:12px; color:#9aa; opacity:.85}
+</style>
 </head>
 <body>
-  <div class="bg"></div>
-  <canvas id="matrix"></canvas>
-  <div class="overlay scanlines"></div>
-  <div class="overlay noise"></div>  <main class="container">
-    <section class="card" role="region" aria-label="Hero">
-      <h1 id="headline" class="glitch" data-text="Hacked by YourName">Hacked by YourName</h1>
-      <p id="subtitle" class="typing" aria-live="polite"></p>
-      <div class="meta" style="margin-top:8px">
-        <span class="badge" id="clock">—</span>
-        <span class="badge">Status: <span style="color:#f43f5e;font-weight:700;margin-left:6px">DEMO</span></span>
-        <span class="badge">Server: 127.0.0.1</span>
-        <span class="badge">Mode: Simulasi</span>
-      </div><div class="photo-wrap">
-    <!-- Kartu foto -->
-    <div class="photo-card">
-      <div class="photo-header">
-        <span class="photo-title">Foto Bukti (Simulasi)</span>
-        <div class="controls">
-          <label class="btn" for="file">Pilih Foto</label>
-          <input id="file" type="file" accept="image/*" hidden />
-          <button class="btn" id="toggle-overlay">Toggle Overlay</button>
-          <button class="btn" id="download">Unduh Gambar</button>
-        </div>
-      </div>
-      <div class="photo-body" id="photoBody">
-        <span class="placeholder">Belum ada foto. Klik <em>Pilih Foto</em> untuk memuat gambar dari perangkat Anda.</span>
-        <img id="photo" alt="Foto simulasi" style="display:none" />
-        <span class="watermark" id="wm">Hacked by YourName • DEMO</span>
-      </div>
-    </div>
+<canvas id="bg"></canvas>
+<div id="scan" aria-hidden="true"></div>
 
-    <!-- Panel edit teks -->
-    <div class="photo-card" aria-label="Pengaturan">
-      <div class="photo-header">
-        <span class="photo-title">Pengaturan Teks</span>
-      </div>
-      <div style="padding:16px; display:grid; gap:12px">
-        <label style="display:grid; gap:6px">
-          <span>Judul (contoh: Hacked by YourName)</span>
-          <input id="titleInput" class="btn" style="font-weight:500; text-transform:uppercase" placeholder="Hacked by ..." />
-        </label>
-        <label style="display:grid; gap:6px">
-          <span>Pesan Berjalan (pisahkan dengan tanda |)</span>
-          <input id="subtitleInput" class="btn" placeholder="Your site has been secured | Contact admin | DEMO only" />
-        </label>
-        <div style="display:flex; gap:10px; flex-wrap:wrap">
-          <button class="btn" id="shake">Efek Kaget</button>
-          <button class="btn" id="invert">Mode Invert</button>
-          <button class="btn" id="reset">Reset</button>
-        </div>
-        <p class="disclaimer">Tip: Ubah <strong>judul</strong> & <strong>pesan</strong> untuk personalisasi. Ini hanyalah <strong>simulasi tampilan</strong>—tidak ada akses server asli.</p>
-      </div>
-    </div>
+<div class="wrap">
+  <div class="marquee" aria-label="running text">
+    <span>&nbsp;HACKED BY AKBARZ666 • CYBER SIMULATION ONLY • KEEP SAFE • HACKED BY AKBARZ666 • CYBER SIMULATION ONLY • KEEP SAFE •</span>
   </div>
 
-  <p class="disclaimer"><strong>PERINGATAN:</strong> Gunakan halaman ini hanya pada situs/prasetel <em>milik Anda sendiri</em> untuk keperluan demo/edukasi. Jangan digunakan untuk tindakan ilegal atau merugikan pihak lain.</p>
-</section>
+  <div class="panel">
+    <div class="photo-wrap" aria-live="polite">
+      <div class="ring"></div>
+      <img id="photo" class="photo" src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?q=80&w=600&auto=format&fit=crop" alt="Foto Anda"/>
+    </div>
 
-  </main>  <script>
-    // ====== Matrix Rain minimal ======
-    (function(){
-      const c = document.getElementById('matrix');
-      const ctx = c.getContext('2d');
-      const resize = () => { c.width = innerWidth; c.height = innerHeight }
-      resize(); addEventListener('resize', resize);
-      const letters = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%^&*{}<>'; 
-      const fontSize = 14; const columns = () => Math.floor(c.width / fontSize); 
-      let drops = new Array(columns()).fill(1);
-      function draw(){
-        ctx.fillStyle = 'rgba(0,0,0,0.08)'; ctx.fillRect(0,0,c.width,c.height);
-        ctx.fillStyle = '#22d3ee'; ctx.font = fontSize + 'px monospace';
-        for(let i=0;i<drops.length;i++){
-          const text = letters[Math.floor(Math.random()*letters.length)];
-          ctx.fillText(text, i*fontSize, drops[i]*fontSize);
-          if(drops[i]*fontSize > c.height && Math.random() > 0.975){ drops[i] = 0 }
-          drops[i]++
+    <div id="drop" class="uploader">
+      <p><strong>Drag & Drop</strong> foto ke sini atau</p>
+      <button class="btn" id="pickBtn">Upload Foto</button>
+      <input id="file" type="file" accept="image/*" hidden />
+    </div>
+
+    <h1>HACKED BY <span style="color:var(--purple)">AKBARZ666</span></h1>
+    <div class="sub">This is only a <b>simulation</b> — for visual/edukasi.</div>
+  </div>
+
+  <div class="term" aria-hidden="false">
+    <div class="term-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <div style="margin-left:8px;color:#9aa;font-weight:700">/var/log/cyber/scan.log</div>
+    </div>
+    <div id="term" class="term-body"></div>
+  </div>
+
+  <footer>© 2025 <b>AKBARZ666</b> • Visual “virus cyber” ungu neon • GitHub Pages ready</footer>
+</div>
+
+<script>
+(() => {
+  const c = document.getElementById('bg');
+  const ctx = c.getContext('2d');
+  let W, H, particles;
+  const rand = (a,b)=>Math.random()*(b-a)+a;
+
+  function resize(){
+    W = c.width = innerWidth * devicePixelRatio;
+    H = c.height = innerHeight * devicePixelRatio;
+    c.style.width = innerWidth+'px';
+    c.style.height = innerHeight+'px';
+    spawn();
+  }
+  function spawn(){
+    const count = Math.min(120, Math.floor(innerWidth*innerHeight/11000));
+    particles = new Array(count).fill(0).map(()=>({
+      x: rand(0,W), y: rand(0,H),
+      vx: rand(-0.25,0.25), vy: rand(-0.25,0.25),
+      r: rand(1.5,3.2)*devicePixelRatio,
+    }));
+  }
+  function tick(){
+    ctx.clearRect(0,0,W,H);
+    ctx.save();
+    ctx.globalAlpha = .06;
+    ctx.strokeStyle = '#9d00ff';
+    ctx.lineWidth = 1*devicePixelRatio;
+    const step = 40*devicePixelRatio;
+    for(let x=0;x<W;x+=step){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for(let y=0;y<H;y+=step){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    ctx.restore();
+    particles.forEach(p=>{
+      p.x += p.vx; p.y += p.vy;
+      if(p.x<0||p.x>W) p.vx*=-1;
+      if(p.y<0||p.y>H) p.vy*=-1;
+      const grd = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*4);
+      grd.addColorStop(0,'rgba(157,0,255,.9)');
+      grd.addColorStop(1,'rgba(157,0,255,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*3,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+    });
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const a=particles[i], b=particles[j];
+        const dx=a.x-b.x, dy=a.y-b.y;
+        const d2=dx*dx+dy*dy;
+        if(d2 < (120*devicePixelRatio)**2){
+          ctx.strokeStyle='rgba(157,0,255,.12)';
+          ctx.lineWidth=1*devicePixelRatio;
+          ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
         }
       }
-      setInterval(draw, 33);
-    })();
-
-    // ====== Jam realtime ======
-    const clock = document.getElementById('clock');
-    setInterval(()=>{ clock.textContent = new Date().toLocaleString('id-ID', { dateStyle:'full', timeStyle:'medium' }) }, 1000);
-
-    // ====== Efek mengetik untuk subtitle ======
-    const subtitleEl = document.getElementById('subtitle');
-    const defaultMessages = [
-      'Your site has been secured — DEMO',
-      'Contact admin to restore — DEMO',
-      'No data was harmed — DEMO'
-    ];
-    let messages = [...defaultMessages];
-    let msgIdx = 0, charIdx = 0;
-    function typeLoop(){
-      const msg = messages[msgIdx % messages.length];
-      subtitleEl.textContent = msg.slice(0, charIdx++);
-      if(charIdx <= msg.length){ setTimeout(typeLoop, 40); }
-      else { setTimeout(()=>{ charIdx = 0; msgIdx++; typeLoop(); }, 1200); }
     }
-    typeLoop();
+    requestAnimationFrame(tick);
+  }
+  addEventListener('resize', resize);
+  resize(); tick();
+})();
 
-    // ====== Headline binding ======
-    const headline = document.getElementById('headline');
-    const titleInput = document.getElementById('titleInput');
-    const subtitleInput = document.getElementById('subtitleInput');
-    titleInput.addEventListener('input', e=>{
-      const val = (e.target.value || 'Hacked by YourName').toUpperCase();
-      headline.textContent = val; headline.setAttribute('data-text', val);
-      document.getElementById('wm').textContent = val + ' • DEMO';
-    });
-    subtitleInput.addEventListener('change', e=>{
-      const raw = e.target.value.trim();
-      messages = raw ? raw.split('|').map(s=>s.trim()).filter(Boolean) : [...defaultMessages];
-      msgIdx = 0; charIdx = 0;
-    });
+(() => {
+  const file = document.getElementById('file');
+  const pickBtn = document.getElementById('pickBtn');
+  const drop = document.getElementById('drop');
+  const img = document.getElementById('photo');
+  const loadFile = (f)=>{ if(f){ img.src = URL.createObjectURL(f); } };
+  pickBtn.addEventListener('click', ()=> file.click());
+  file.addEventListener('change', e => loadFile(e.target.files[0]));
+  ['dragenter','dragover'].forEach(ev =>
+    drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('drag'); })
+  );
+  ['dragleave','drop'].forEach(ev =>
+    drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('drag'); })
+  );
+  drop.addEventListener('drop', e => loadFile(e.dataTransfer.files?.[0]));
+})();
 
-    // ====== Foto uploader + watermark ======
-    const fileInput = document.getElementById('file');
-    const img = document.getElementById('photo');
-    const photoBody = document.getElementById('photoBody');
-    const wm = document.getElementById('wm');
-    fileInput.addEventListener('change', (e)=>{
-      const file = e.target.files?.[0];
-      if(!file) return;
-      const url = URL.createObjectURL(file);
-      img.src = url; img.style.display = 'block';
-      photoBody.querySelector('.placeholder')?.remove();
-    });
-
-    // Toggle overlay/watermark
-    document.getElementById('toggle-overlay').addEventListener('click', ()=>{
-      wm.style.display = (wm.style.display === 'none') ? 'inline-block' : 'none';
-    });
-
-    // Unduh composited image (canvas)
-    document.getElementById('download').addEventListener('click', ()=>{
-      if(!img.src){ alert('Muat foto dulu ya.'); return; }
-      const canvas = document.createElement('canvas');
-      const w = img.naturalWidth || 1920, h = img.naturalHeight || 1080;
-      canvas.width = w; canvas.height = h; const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
-      if(wm.style.display !== 'none'){
-        const pad = Math.round(Math.min(w,h) * 0.02);
-        ctx.font = Math.round(Math.min(w,h) * 0.035) + 'px ui-monospace, monospace';
-        ctx.fillStyle = 'rgba(0,0,0,.55)';
-        const text = wm.textContent || '';
-        const tw = ctx.measureText(text).width, th = Math.min(w,h) * 0.05;
-        const x = w - tw - pad*1.2, y = h - pad*1.2;
-        ctx.fillRect(x - pad*.6, y - th*0.9, tw + pad*1.2, th);
-        ctx.fillStyle = '#e5e7eb';
-        ctx.fillText(text, x, y - th*0.25);
-      }
-      const a = document.createElement('a'); a.download = 'simulasi-deface.jpg'; a.href = canvas.toDataURL('image/jpeg', .92); a.click();
-    });
-
-    // ====== Gimmicks: shake & invert ======
-    const shakeBtn = document.getElementById('shake');
-    shakeBtn.addEventListener('click', ()=>{
-      document.body.animate([
-        { transform:'translate(0,0)' },
-        { transform:'translate(-6px,4px)' },
-        { transform:'translate(6px,-4px)' },
-        { transform:'translate(0,0)' }
-      ], { duration: 250, iterations: 4 });
-    });
-    document.getElementById('invert').addEventListener('click', ()=>{
-      const on = document.body.style.filter === 'invert(1) hue-rotate(180deg)';
-      document.body.style.filter = on ? '' : 'invert(1) hue-rotate(180deg)';
-    });
-    document.getElementById('reset').addEventListener('click', ()=>{
-      document.body.style.filter = '';
-      titleInput.value = '';
-      subtitleInput.value = '';
-      headline.textContent = 'HACKED BY YOURNAME';
-      headline.setAttribute('data-text','HACKED BY YOURNAME');
-      messages = [...defaultMessages]; msgIdx=0; charIdx=0;
-    });
-  </script></body>
-  </html>
+(() => {
+  const box = document.getElementById('term');
+  const lines = [
+    '[*] Initializing cyber-virus visual engine (purple mode)...',
+    '[*] Spawning nodes: OK',
+    '[*] Establishing mesh links: OK',
+    '[*] Applying neon violet shield...',
+    '[!] REMINDER: This is ONLY a simulation for learning.',
+    '[*] Ready. Drop your image above.',
+  ];
+  let i=0, j=0;
+  function type(){
+    if(i>=lines.length){ box.insertAdjacentHTML('beforeend','<span class="cursor"></span>'); return; }
+    if(j===0){ box.insertAdjacentHTML('beforeend', `<span class="k">$</span> <span class="v"></span><br/>`); }
+    const v = box.querySelectorAll('.v')[i];
+    v.textContent += lines[i][j++];
+    box.scrollTop = box.scrollHeight;
+    if(j>=lines[i].length){ i++; j=0; setTimeout(type, 500); }
+    else{ setTimeout(type, 25); }
+  }
+  type();
+})();
+</script>
+</body>
+</html>
